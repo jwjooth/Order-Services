@@ -12,7 +12,7 @@ env vars). This file is the "don't get this wrong" list.
 - `bun run start` → production run
 - `bun test` → bun test; unit + HTTP tests, **no database needed** (fakes)
 - `bun run typecheck` → `tsc --noEmit` (the only type check; no lint/format config, no CI)
-- Local DB: `docker compose up -d db` (postgres on :5432), full stack: `docker compose up --build`
+- `bun run build` → bundles to `dist/` (`bun build --target bun`)
 
 ## Layout (layered, service layer)
 `src/domain` (entity + repository *interface*, no I/O) → `src/application` (OrderService, all

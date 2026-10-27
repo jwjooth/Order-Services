@@ -82,7 +82,10 @@ export function orderRoutes(deps: {
         const order = await service.getById(params.id);
         return status(200, order);
       },
-      { params: t.Object({ id: t.String({ format: "uuid" }) }), response: { 200: OrderSchema } },
+      {
+        params: t.Object({ id: t.String({ format: "uuid" }) }),
+        response: { 200: OrderSchema },
+      },
     )
     .get(
       "/",
@@ -143,7 +146,11 @@ export function handleError(
     logger.warn("request failed", { code: error.code, message: error.message });
     set.status = error.status;
     return {
-      error: { code: error.code, message: error.message, details: error.details },
+      error: {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      },
     };
   }
   if (error instanceof ElysiaValidationError) {
@@ -167,5 +174,7 @@ export function handleError(
   }
   logger.error("unhandled error", { message: String(error) });
   set.status = 500;
-  return { error: { code: "INTERNAL_ERROR", message: "internal server error" } };
+  return {
+    error: { code: "INTERNAL_ERROR", message: "internal server error" },
+  };
 }

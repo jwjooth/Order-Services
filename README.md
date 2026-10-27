@@ -1,7 +1,7 @@
 # Order Services
 
 Order microservice — **Bun + Elysia + TypeScript + PostgreSQL**. (The parent folder is named
-`FastAPI Projects`, but nothing here is Python.)
+`FastAPI Projects`, but nothing here is Python.) Database is standard **PostgreSQL**.
 
 ## Architecture — Layered, with a Service Layer
 
@@ -42,6 +42,7 @@ pending ──▶ confirmed ──▶ shipped
    │            │
    └────────────┴──▶ cancelled
 ```
+
 `shipped` and `cancelled` are terminal. Illegal transitions → HTTP 409 (`ConflictError`).
 
 Status changes are **guarded updates**: `UPDATE ... WHERE id = ? AND status = <status read>`, so two
@@ -49,42 +50,42 @@ concurrent writers can't both win — the loser gets 409 `order ... was modified
 
 ### API
 
-| Method | Path                     | Notes                                    |
-| ------ | ------------------------ | ---------------------------------------- |
-| POST   | `/orders`                | create → 201                             |
-| GET    | `/orders/:id`            | 404 if unknown, 422 if id is not a UUID  |
-| GET    | `/orders`                | `?customerId=&status=&limit=&offset=`    |
-| PATCH  | `/orders/:id/status`     | `{"status":"confirmed"}` → 409 if illegal |
-| GET    | `/health`                | liveness — no DB touch                   |
-| GET    | `/ready`                 | readiness — `SELECT 1`, 503 if DB is down |
+| Method | Path                 | Notes                                     |
+| ------ | -------------------- | ----------------------------------------- |
+| POST   | `/orders`            | create → 201                              |
+| GET    | `/orders/:id`        | 404 if unknown, 422 if id is not a UUID   |
+| GET    | `/orders`            | `?customerId=&status=&limit=&offset=`     |
+| PATCH  | `/orders/:id/status` | `{"status":"confirmed"}` → 409 if illegal |
+| GET    | `/health`            | liveness — no DB touch                    |
+| GET    | `/ready`             | readiness — `SELECT 1`, 503 if DB is down |
 
 Errors are always `{"error":{"code","message","details?"}}`.
 
 ## Run locally
 
+Ensure PostgreSQL is running locally or via Docker Compose.
+
 ```bash
-cp .env.example .env          # set DATABASE_URL
-docker compose up -d db       # postgres on :5432
 bun install
-bun run dev                   # http://localhost:3000
+bun run dev                     # http://localhost:3000
 ```
 
-Full stack in containers: `docker compose up --build` (api + db).
+Full stack with local Postgres in containers: `docker compose up --build`.
 
 ## Commands
 
-| Command             | Purpose                                    |
-| ------------------- | ------------------------------------------ |
-| `bun run dev`       | watch mode on `src/index.ts`               |
-| `bun run start`     | production run (no watch)                  |
-| `bun test`          | bun test — unit + HTTP tests, no DB needed |
-| `bun run typecheck` | `tsc --noEmit`                             |
+| Command             | Purpose                                      |
+| ------------------- | -------------------------------------------- |
+| `bun run dev`       | watch mode on `src/index.ts`                 |
+| `bun run start`     | production run (no watch)                    |
+| `bun run build`     | bundle to `dist/` (`bun build --target bun`) |
+| `bun test`          | bun test — unit + HTTP tests, no DB needed   |
+| `bun run typecheck` | `tsc --noEmit`                               |
 
 ## Config (env vars)
 
-`DATABASE_URL` is **required** — the process exits at boot without it. Others: `PORT` (3000),
-`HOST` (0.0.0.0), `DATABASE_SSL` (false — set `true` on managed DBs), `LOG_LEVEL`
-(debug|info|warn|error), `NODE_ENV` (development|production|test). Invalid values fail fast.
+`DATABASE_URL` is **required** — the process exits at boot without it (e.g. `postgres://postgres:postgres@localhost:5432/orders_db`).
+Others: `PORT` (3000), `HOST` (0.0.0.0), `DATABASE_SSL` (false for local, true if TLS is required), `LOG_LEVEL` (debug|info|warn|error), `NODE_ENV` (development|production|test). Invalid values fail fast.
 
 Logs are one JSON object per line on stdout.
 

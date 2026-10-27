@@ -53,9 +53,9 @@ describe("OrderService", () => {
   });
 
   it("rejects an order with no items", async () => {
-    expect(
-      service().create({ customerId: "c-1", items: [] }),
-    ).rejects.toThrow(/at least one item/);
+    expect(service().create({ customerId: "c-1", items: [] })).rejects.toThrow(
+      /at least one item/,
+    );
   });
 
   it("rejects a non-positive quantity", async () => {
@@ -70,8 +70,12 @@ describe("OrderService", () => {
   it("walks the happy status path", async () => {
     const svc = service();
     const order = await svc.create({ customerId: "c-1", items: [item] });
-    expect((await svc.changeStatus(order.id, "confirmed")).status).toBe("confirmed");
-    expect((await svc.changeStatus(order.id, "shipped")).status).toBe("shipped");
+    expect((await svc.changeStatus(order.id, "confirmed")).status).toBe(
+      "confirmed",
+    );
+    expect((await svc.changeStatus(order.id, "shipped")).status).toBe(
+      "shipped",
+    );
   });
 
   it("rejects an invalid status transition", async () => {

@@ -12,7 +12,11 @@ export interface Logger {
 export function createLogger(config: Config): Logger {
   const threshold = LEVELS[config.logLevel] ?? LEVELS.info;
 
-  const log = (level: keyof typeof LEVELS, msg: string, meta?: Record<string, unknown>) => {
+  const log = (
+    level: keyof typeof LEVELS,
+    msg: string,
+    meta?: Record<string, unknown>,
+  ) => {
     if (LEVELS[level] < threshold) return;
     const entry = {
       level,

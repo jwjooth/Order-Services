@@ -5,7 +5,11 @@ import {
   type OrderStatus,
 } from "../domain/order.ts";
 import type { OrderRepository } from "../domain/order.repository.ts";
-import { ConflictError, NotFoundError, ValidationError } from "../shared/errors.ts";
+import {
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "../shared/errors.ts";
 
 export interface CreateOrderInput {
   customerId: string;
@@ -31,7 +35,9 @@ export class OrderService {
         throw new ValidationError("item quantity must be a positive integer");
       }
       if (!Number.isInteger(item.unitPriceCents) || item.unitPriceCents < 0) {
-        throw new ValidationError("item unitPriceCents must be a non-negative integer");
+        throw new ValidationError(
+          "item unitPriceCents must be a non-negative integer",
+        );
       }
     }
 

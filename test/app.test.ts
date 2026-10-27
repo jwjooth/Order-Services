@@ -58,7 +58,12 @@ const logger: Logger = {
 };
 
 function makeApp() {
-  return buildApp({ config, logger, db: fakeDb, repository: new FakeOrderRepository() });
+  return buildApp({
+    config,
+    logger,
+    db: fakeDb,
+    repository: new FakeOrderRepository(),
+  });
 }
 
 describe("http api", () => {
@@ -86,7 +91,9 @@ describe("http api", () => {
 
   it("returns 404 for a missing order", async () => {
     const res = await makeApp().handle(
-      new Request("http://localhost/orders/11111111-1111-1111-1111-111111111111"),
+      new Request(
+        "http://localhost/orders/11111111-1111-1111-1111-111111111111",
+      ),
     );
     expect(res.status).toBe(404);
     const body = (await res.json()) as { error: { code: string } };
@@ -106,7 +113,11 @@ describe("http api", () => {
 
   it("serves health and readiness", async () => {
     const app = makeApp();
-    expect((await app.handle(new Request("http://localhost/health"))).status).toBe(200);
-    expect((await app.handle(new Request("http://localhost/ready"))).status).toBe(200);
+    expect(
+      (await app.handle(new Request("http://localhost/health"))).status,
+    ).toBe(200);
+    expect(
+      (await app.handle(new Request("http://localhost/ready"))).status,
+    ).toBe(200);
   });
 });
