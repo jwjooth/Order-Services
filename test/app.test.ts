@@ -5,7 +5,7 @@ import type {
   ListOrdersQuery,
   OrderRepository,
 } from "../src/domain/order.repository.ts";
-import type { Db } from "../src/infrastructure/db/postgres.ts";
+import type { Client } from "../src/infrastructure/db/postgres.ts";
 import type { Config } from "../src/shared/config.ts";
 import type { Logger } from "../src/shared/logger.ts";
 
@@ -39,7 +39,7 @@ class FakeOrderRepository implements OrderRepository {
 }
 
 // tagged-template stub so /ready can query without a real database
-const fakeDb = (() => Promise.resolve([{ ok: 1 }])) as unknown as Db;
+const fakeClient = (() => Promise.resolve([{ ok: 1 }])) as unknown as Client;
 
 const config: Config = {
   env: "test",
@@ -61,7 +61,7 @@ function makeApp() {
   return buildApp({
     config,
     logger,
-    db: fakeDb,
+    client: fakeClient,
     repository: new FakeOrderRepository(),
   });
 }
@@ -105,19 +105,20 @@ describe("http api", () => {
       new Request("http://localhost/orders", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ customerId: "", items: [] }),
+        body: JSON.stringify({ customerId: "c-1", items: [] }),
       }),
     );
     expect(res.status).toBe(422);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
   it("serves health and readiness", async () => {
     const app = makeApp();
-    expect(
-      (await app.handle(new Request("http://localhost/health"))).status,
-    ).toBe(200);
-    expect(
-      (await app.handle(new Request("http://localhost/ready"))).status,
-    ).toBe(200);
+    const health = await app.handle(new Request("http://localhost/health"));
+    expect(health.status).toBe(200);
+
+    const ready = await app.handle(new Request("http://localhost/ready"));
+    expect(ready.status).toBe(200);
   });
 });

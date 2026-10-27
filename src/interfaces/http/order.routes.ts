@@ -4,23 +4,23 @@ import {
   t,
   ValidationError as ElysiaValidationError,
 } from "elysia";
-import type { OrderService } from "../../application/order.service.ts";
-import type { Db } from "../../infrastructure/db/postgres.ts";
+import type { Client } from "../../infrastructure/db/postgres.ts";
 import { AppError } from "../../shared/errors.ts";
 import type { Logger } from "../../shared/logger.ts";
+import type { OrderController } from "./order.controller.ts";
 
-const OrderItem = t.Object({
+export const OrderItem = t.Object({
   sku: t.String({ minLength: 1 }),
   quantity: t.Integer({ minimum: 1 }),
   unitPriceCents: t.Integer({ minimum: 0 }),
 });
 
-const CreateOrderBody = t.Object({
+export const CreateOrderBody = t.Object({
   customerId: t.String({ minLength: 1 }),
   items: t.Array(OrderItem, { minItems: 1 }),
 });
 
-const OrderSchema = t.Object({
+export const OrderSchema = t.Object({
   id: t.String(),
   customerId: t.String(),
   items: t.Array(OrderItem),
@@ -35,9 +35,9 @@ const OrderSchema = t.Object({
   updatedAt: t.Date(),
 });
 
-const OrderList = t.Array(OrderSchema);
+export const OrderList = t.Array(OrderSchema);
 
-const ListQuery = t.Object({
+export const ListQuery = t.Object({
   customerId: t.Optional(t.String()),
   status: t.Optional(
     t.Union([
@@ -51,7 +51,7 @@ const ListQuery = t.Object({
   offset: t.Optional(t.Integer({ minimum: 0 })),
 });
 
-const StatusBody = t.Object({
+export const StatusBody = t.Object({
   status: t.Union([
     t.Literal("pending"),
     t.Literal("confirmed"),
@@ -60,26 +60,25 @@ const StatusBody = t.Object({
   ]),
 });
 
-export function orderRoutes(deps: {
-  service: OrderService;
-  db: Db;
-  logger: Logger;
-}) {
-  const { service, db, logger } = deps;
+export function orderRoutes(deps: { controller: OrderController }) {
+  const { controller } = deps;
 
   return new Elysia({ prefix: "/orders" })
     .post(
       "/",
       async ({ body, status }) => {
-        const order = await service.create(body);
+        const order = await controller.create(body);
         return status(201, order);
       },
-      { body: CreateOrderBody, response: { 201: OrderSchema } },
+      {
+        body: CreateOrderBody,
+        response: { 201: OrderSchema },
+      },
     )
     .get(
       "/:id",
       async ({ params, status }) => {
-        const order = await service.getById(params.id);
+        const order = await controller.getById(params.id);
         return status(200, order);
       },
       {
@@ -90,15 +89,18 @@ export function orderRoutes(deps: {
     .get(
       "/",
       async ({ query, status }) => {
-        const orders = await service.list(query);
+        const orders = await controller.list(query);
         return status(200, orders);
       },
-      { query: ListQuery, response: { 200: OrderList } },
+      {
+        query: ListQuery,
+        response: { 200: OrderList },
+      },
     )
     .patch(
       "/:id/status",
       async ({ params, body, status }) => {
-        const order = await service.changeStatus(params.id, body.status);
+        const order = await controller.changeStatus(params.id, body.status);
         return status(200, order);
       },
       {
@@ -109,8 +111,8 @@ export function orderRoutes(deps: {
     );
 }
 
-export function healthRoutes(deps: { db: Db; logger: Logger }) {
-  const { db } = deps;
+export function healthRoutes(deps: { client: Client; logger: Logger }) {
+  const { client } = deps;
   return new Elysia()
     .get("/health", () => ({ status: "ok" }), {
       response: { 200: t.Object({ status: t.String() }) },
@@ -119,7 +121,7 @@ export function healthRoutes(deps: { db: Db; logger: Logger }) {
       "/ready",
       async ({ status }) => {
         try {
-          await db`SELECT 1`;
+          await client`SELECT 1`;
           return status(200, { status: "ready" });
         } catch (err) {
           return status(503, { status: "not_ready", error: String(err) });

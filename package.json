@@ -12,12 +12,14 @@
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.52",
+    "drizzle-orm": "^0.45.4",
     "elysia": "^1.4.30",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@types/bun": "^1.4.4",
     "bun-types": "^1.4.4",
+    "drizzle-kit": "^0.31.11",
     "typescript": "^5.9.3"
   },
   "module": "src/index.ts"
